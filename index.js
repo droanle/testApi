@@ -42,7 +42,7 @@ app.get("/check_availability", async (req, res) => {
       FILTER .date = <str>$date AND .time = <str>$time
     `, { date, time });
 
-    if (timeSlotTaken.length <= 0)
+    if (timeSlotTaken.length > 0)
       res.json({ available: false, message: "Time slot unavailable" });
     else
       res.json({ available: true, message: "Time slot available" });
