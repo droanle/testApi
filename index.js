@@ -54,6 +54,8 @@ app.get("/check_availability", async (req, res) => {
 });
 // Schedule a time slot for the person
 app.post("/schedule", async (req, res) => {
+  console.log(req.query, req);
+
   var { date, time, beneficiary_id } = req.query;
   if (!beneficiary_id || !date || !time)
     return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
