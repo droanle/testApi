@@ -7,9 +7,8 @@ const client = edgedb.createClient();
 // Check if the person is an active beneficiary
 app.get("/is_beneficiary", async (req, res) => {
   const { name, cpf } = req.query;
-  if (!name || !cpf) {
+  if (!name || !cpf)
     return res.status(400).json({ error: "Name and CPF are required" });
-  }
 
   try {
     const beneficiary = await client.query(`
@@ -19,14 +18,10 @@ app.get("/is_beneficiary", async (req, res) => {
       } FILTER .name ILIKE '%${name}%' AND .cpf = <str>$cpf
     `, { cpf });
 
-    console.log("ola", beneficiary);
-
-
-    if (beneficiary) {
-      res.json({ status: "active", ...beneficiary });
-    } else {
+    if (beneficiary.length > 0)
+      res.json({ status: "active", ...beneficiary[0] });
+    else
       res.status(404).json({ error: "Beneficiary not found" });
-    }
   } catch (err) {
     res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
@@ -35,9 +30,9 @@ app.get("/is_beneficiary", async (req, res) => {
 // Check if the time slot is available
 app.get("/check_availability", async (req, res) => {
   const { date, time } = req.query;
-  if (!date || !time) {
+  if (!date || !time)
     return res.status(400).json({ error: "Date and time are required" });
-  }
+
 
   try {
     const timeSlotTaken = await client.query(`
@@ -45,11 +40,10 @@ app.get("/check_availability", async (req, res) => {
       FILTER .date = <str>$date AND .time = <str>$time
     `, { date, time });
 
-    if (timeSlotTaken) {
+    if (timeSlotTaken.length <= 0)
       res.json({ available: false, message: "Time slot unavailable" });
-    } else {
+    else
       res.json({ available: true, message: "Time slot available" });
-    }
   } catch (err) {
     res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
@@ -58,9 +52,8 @@ app.get("/check_availability", async (req, res) => {
 // Schedule a time slot for the person
 app.post("/schedule", async (req, res) => {
   const { date, time, beneficiary_id } = req.query;
-  if (!beneficiary_id || !date || !time) {
+  if (!beneficiary_id || !date || !time)
     return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
-  }
 
   try {
     const beneficiary = await client.query(`
@@ -69,18 +62,16 @@ app.post("/schedule", async (req, res) => {
       } FILTER .id = <uuid>$beneficiary_id
     `, { beneficiary_id });
 
-    if (!beneficiary) {
+    if (beneficiary.length <= 0)
       return res.status(404).json({ error: "Beneficiary not found" });
-    }
 
     const timeSlotTaken = await client.query(`
       SELECT Schedule
       FILTER .date = <str>$date AND .time = <str>$time
     `, { date, time });
 
-    if (timeSlotTaken) {
+    if (timeSlotTaken.length > 0)
       return res.json({ available: false, message: "Time slot unavailable" });
-    }
 
     await client.execute(`
       INSERT Schedule {
