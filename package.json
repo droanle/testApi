@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "express": "^4.18.1",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.1-security",
+    "vercel": "^37.7.1"
   }
 }

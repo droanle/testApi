@@ -81,6 +81,8 @@ app.get("/schedule", (req, res) => {
 // Handling unknown routes
 app.use((req, res) => res.status(404).json({ error: "Route not found" }));
 
-app.listen(3001, () => {
-  console.log("Server running on port 3001");
-});
+// app.listen(3001, () => {
+//   console.log("Server running on port 3001");
+// });
+
+module.exports = app;
