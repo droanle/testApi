@@ -13,6 +13,7 @@ app.get("/is_beneficiary", async (req, res) => {
   try {
     const beneficiary = await client.query(`
       SELECT Beneficiary {
+      id,
         name,
         cpf
       } FILTER .name ILIKE '%${name}%' AND .cpf = <str>$cpf
@@ -37,7 +38,7 @@ app.get("/check_availability", async (req, res) => {
   try {
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <str>$date AND .time = <str>$time
+      FILTER .date = <cal::local_date>$date AND .time = <cal::local_time>$time
     `, { date, time });
 
     if (timeSlotTaken.length <= 0)
@@ -67,16 +68,18 @@ app.post("/schedule", async (req, res) => {
 
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <str>$date AND .time = <str>$time
+      FILTER .date = <cal::local_date>$date AND .time = <cal::local_time>$time
     `, { date, time });
+
+
 
     if (timeSlotTaken.length > 0)
       return res.json({ available: false, message: "Time slot unavailable" });
 
     await client.execute(`
       INSERT Schedule {
-        date := <str>$date,
-        time := <str>$time,
+        date := <cal::local_date>$date,
+        time := <cal::local_time>$time,
         beneficiary := <uuid>$beneficiary_id
       }
     `, { date, time, beneficiary_id });
