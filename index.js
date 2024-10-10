@@ -38,8 +38,8 @@ app.get("/check_availability", async (req, res) => {
   try {
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>edgedb.local_date($date) AND .time = <cal::local_time>edgedb.local_time($time)
-    `, { date, time });
+      FILTER .date = <cal::local_date>${date} AND .time = <cal::local_time>${time}
+    `, {});
 
     if (timeSlotTaken.length <= 0)
       res.json({ available: false, message: "Time slot unavailable" });
@@ -49,7 +49,6 @@ app.get("/check_availability", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
-
 // Schedule a time slot for the person
 app.post("/schedule", async (req, res) => {
   const { date, time, beneficiary_id } = req.query;
@@ -68,21 +67,19 @@ app.post("/schedule", async (req, res) => {
 
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>edgedb.local_date($date) AND .time = <cal::local_time>edgedb.local_time($time)
-    `, { date, time });
-
-
+      FILTER .date = <str>${date} AND .time = <str>${time}
+    `, {});
 
     if (timeSlotTaken.length > 0)
       return res.json({ available: false, message: "Time slot unavailable" });
 
     await client.execute(`
       INSERT Schedule {
-        date := <cal::local_date>edgedb.local_date($date),
-        time := <cal::local_time>edgedb.local_time($time),
+        date := <str>${date},
+        time := <str>${time},
         beneficiary := <uuid>$beneficiary_id
       }
-    `, { date, time, beneficiary_id });
+    `, { beneficiary_id });
 
     res.json({ available: true, message: "Time slot successfully scheduled" });
   } catch (err) {
