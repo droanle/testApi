@@ -32,10 +32,12 @@ app.get("/is_beneficiary", async (req, res) => {
 
 // Check if the time slot is available
 app.get("/check_availability", async (req, res) => {
-  const { date, time } = req.query;
+  var { date, time } = req.query;
   if (!date || !time)
     return res.status(400).json({ error: "Date and time are required" });
 
+  date = edgedb.local_date(date);
+  time = edgedb.local_time(time);
 
   try {
     const timeSlotTaken = await client.query(`
@@ -55,9 +57,12 @@ app.get("/check_availability", async (req, res) => {
 });
 // Schedule a time slot for the person
 app.post("/schedule", async (req, res) => {
-  const { date, time, beneficiary_id } = req.query;
+  var { date, time, beneficiary_id } = req.query;
   if (!beneficiary_id || !date || !time)
     return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
+
+  date = edgedb.local_date(date);
+  time = edgedb.local_time(time);
 
   try {
     const beneficiary = await client.query(`
@@ -71,19 +76,19 @@ app.post("/schedule", async (req, res) => {
 
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>${date} AND .time = <cal::local_time>${time}
-    `);
+      FILTER .date = <cal::local_date>$date AND .time = <cal::local_time>$time
+    `, { date, time });
 
     if (timeSlotTaken.length > 0)
       return res.json({ available: false, message: "Time slot unavailable" });
 
     await client.execute(`
       INSERT Schedule {
-        date := <cal::local_date>${date},
-        time := <cal::local_time>${time},
+        date := <cal::local_date>$date,
+        time := <cal::local_time>$time,
         beneficiary := <uuid>$beneficiary_id
       }
-    `, { beneficiary_id });
+    `, { date, time, beneficiary_id });
 
     res.json({ available: true, message: "Time slot successfully scheduled" });
   } catch (err) {
