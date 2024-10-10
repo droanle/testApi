@@ -38,7 +38,7 @@ app.get("/check_availability", async (req, res) => {
   try {
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>$date AND .time = <cal::local_time>$time
+      FILTER .date = <cal::local_date>edgedb.local_date($date) AND .time = <cal::local_time>edgedb.local_time($time)
     `, { date, time });
 
     if (timeSlotTaken.length <= 0)
@@ -68,7 +68,7 @@ app.post("/schedule", async (req, res) => {
 
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>$date AND .time = <cal::local_time>$time
+      FILTER .date = <cal::local_date>edgedb.local_date($date) AND .time = <cal::local_time>edgedb.local_time($time)
     `, { date, time });
 
 
@@ -78,8 +78,8 @@ app.post("/schedule", async (req, res) => {
 
     await client.execute(`
       INSERT Schedule {
-        date := <cal::local_date>$date,
-        time := <cal::local_time>$time,
+        date := <cal::local_date>edgedb.local_date($date),
+        time := <cal::local_time>edgedb.local_time($time),
         beneficiary := <uuid>$beneficiary_id
       }
     `, { date, time, beneficiary_id });
