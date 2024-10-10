@@ -1,122 +1,114 @@
 const express = require("express");
 const edgedb = require("edgedb");
-const e = require("./dbschema/edgeql-js"); // Importa consultas geradas pelo EdgeDB
 const app = express();
 
-const client = edgedb.createClient(); // Cria o cliente EdgeDB
+const client = edgedb.createClient();
 
 // Check if the person is an active beneficiary
 app.get("/is_beneficiary", async (req, res) => {
   const { name, cpf } = req.query;
-  if (!name || !cpf)
+  if (!name || !cpf) {
     return res.status(400).json({ error: "Name and CPF are required" });
+  }
 
   try {
-    const beneficiary = await e
-      .select(e.Beneficiary, (b) => ({
-        name: true,
-        cpf: true,
-        filter: e.op(
-          e.op(b.name, 'ilike', `%${name}%`),
-          'and',
-          e.op(b.cpf, '=', cpf)
-        )
-      }))
-      .run(client);
+    const beneficiary = await client.querySingle(`
+      SELECT Beneficiary {
+        name,
+        cpf
+      } FILTER .name ILIKE '%${name}%' AND .cpf = <str>$cpf
+    `, { cpf });
 
-    if (beneficiary.length > 0)
-      res.json({ status: "active", ...beneficiary[0] });
-    else
+    if (beneficiary) {
+      res.json({ status: "active", ...beneficiary });
+    } else {
       res.status(404).json({ error: "Beneficiary not found" });
+    }
   } catch (err) {
-    res.status(500).json({ error: "Internal Server Error", details: err });
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
 
 // Check if the time slot is available
 app.get("/check_availability", async (req, res) => {
   const { date, time } = req.query;
-  if (!date || !time)
+  if (!date || !time) {
     return res.status(400).json({ error: "Date and time are required" });
+  }
 
   try {
-    const timeSlotTaken = await e
-      .select(e.Schedule, (s) => ({
-        filter: e.op(
-          e.op(s.date, '=', date),
-          'and',
-          e.op(s.time, '=', time)
-        )
-      }))
-      .run(client);
+    const timeSlotTaken = await client.querySingle(`
+      SELECT Schedule
+      FILTER .date = <str>$date AND .time = <str>$time
+    `, { date, time });
 
-    if (timeSlotTaken.length > 0)
+    if (timeSlotTaken) {
       res.json({ available: false, message: "Time slot unavailable" });
-    else
+    } else {
       res.json({ available: true, message: "Time slot available" });
+    }
   } catch (err) {
-    res.status(500).json({ error: "Internal Server Error", details: err });
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
 
 // Schedule a time slot for the person
 app.post("/schedule", async (req, res) => {
   const { date, time, beneficiary_id } = req.query;
-  if (!beneficiary_id || !date || !time)
+  if (!beneficiary_id || !date || !time) {
     return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
+  }
 
   try {
-    const beneficiary = await e
-      .select(e.Beneficiary, (b) => ({
-        id: true,
-        filter: e.op(b.id, '=', beneficiary_id)
-      }))
-      .run(client);
+    const beneficiary = await client.querySingle(`
+      SELECT Beneficiary {
+        id
+      } FILTER .id = <uuid>$beneficiary_id
+    `, { beneficiary_id });
 
-    if (beneficiary.length === 0)
+    if (!beneficiary) {
       return res.status(404).json({ error: "Beneficiary not found" });
+    }
 
-    const timeSlotTaken = await e
-      .select(e.Schedule, (s) => ({
-        filter: e.op(
-          e.op(s.date, '=', date),
-          'and',
-          e.op(s.time, '=', time)
-        )
-      }))
-      .run(client);
+    const timeSlotTaken = await client.querySingle(`
+      SELECT Schedule
+      FILTER .date = <str>$date AND .time = <str>$time
+    `, { date, time });
 
-    if (timeSlotTaken.length > 0)
+    if (timeSlotTaken) {
       return res.json({ available: false, message: "Time slot unavailable" });
+    }
 
-    await e.insert(e.Schedule, {
-      date,
-      time,
-      beneficiary: e.uuid(beneficiary_id)
-    }).run(client);
+    await client.execute(`
+      INSERT Schedule {
+        date := <str>$date,
+        time := <str>$time,
+        beneficiary := <uuid>$beneficiary_id
+      }
+    `, { date, time, beneficiary_id });
 
     res.json({ available: true, message: "Time slot successfully scheduled" });
   } catch (err) {
-    res.status(500).json({ error: "Internal Server Error", details: err });
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
 
 app.get("/schedule", async (req, res) => {
   try {
-    const schedule = await e
-      .select(e.Schedule, (s) => ({
-        date: true,
-        time: true,
+    const schedule = await client.query(`
+      SELECT Schedule {
+        date,
+        time,
         beneficiary: {
-          id: true,
-          name: true
+          id,
+          name
         }
-      }))
-      .run(client);
+      }
+    `);
 
     res.json(schedule);
   } catch (err) {
-    res.status(500).json({ error: "Internal Server Error", details: err });
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
 
