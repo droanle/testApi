@@ -59,7 +59,7 @@ app.post("/schedule", async (req, res) => {
     return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
 
   try {
-    const beneficiary = await client.querySingle(`
+    const beneficiary = await client.query(`
       SELECT Beneficiary {
         id
       } FILTER .id = <uuid>$beneficiary_id
@@ -80,9 +80,9 @@ app.post("/schedule", async (req, res) => {
       INSERT Schedule {
         date := <str>$date,
         time := <str>$time,
-        beneficiary := <Beneficiary>$beneficiary
+        beneficiary_id := <str>$beneficiary_id
       }
-    `, { date, time, beneficiary });
+    `, { date, time, beneficiary_id });
 
     res.json({ available: true, message: "Time slot successfully scheduled" });
   } catch (err) {
@@ -98,10 +98,7 @@ app.get("/schedule", async (req, res) => {
       SELECT Schedule {
         date,
         time,
-        beneficiary: {
-          id,
-          name
-        }
+        beneficiary_id
       }
     `);
 

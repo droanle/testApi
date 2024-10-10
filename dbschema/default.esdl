@@ -7,6 +7,6 @@ module default {
   type Schedule {
     required property date -> str;
     required property time -> str;
-    required link beneficiary -> Beneficiary;
+    beneficiary_id -> str;
   }
 }
