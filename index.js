@@ -41,7 +41,7 @@ app.get("/check_availability", async (req, res) => {
     const timeSlotTaken = await client.query(`
       SELECT Schedule
       FILTER .date = <cal::local_date>${date} AND .time = <cal::local_time>${time}
-    `, {});
+    `);
 
     if (timeSlotTaken.length <= 0)
       res.json({ available: false, message: "Time slot unavailable" });
@@ -71,16 +71,16 @@ app.post("/schedule", async (req, res) => {
 
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <str>${date} AND .time = <str>${time}
-    `, {});
+      FILTER .date = <cal::local_date>${date} AND .time = <cal::local_time>${time}
+    `);
 
     if (timeSlotTaken.length > 0)
       return res.json({ available: false, message: "Time slot unavailable" });
 
     await client.execute(`
       INSERT Schedule {
-        date := <str>${date},
-        time := <str>${time},
+        date := <cal::local_date>${date},
+        time := <cal::local_time>${time},
         beneficiary := <uuid>$beneficiary_id
       }
     `, { beneficiary_id });
