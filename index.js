@@ -19,7 +19,7 @@ app.get("/is_beneficiary", async (req, res) => {
       } FILTER .name ILIKE '%${name}%' AND .cpf = <str>$cpf
     `, { cpf });
 
-    console.log(beneficiary);
+    console.log("ola", beneficiary);
 
 
     if (beneficiary) {
