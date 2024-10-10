@@ -24,8 +24,6 @@ app.get("/is_beneficiary", async (req, res) => {
     else
       res.status(404).json({ error: "Beneficiary not found" });
   } catch (err) {
-    console.log(err);
-
     res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
@@ -47,13 +45,11 @@ app.get("/check_availability", async (req, res) => {
     else
       res.json({ available: true, message: "Time slot available" });
   } catch (err) {
-    console.log(err);
-
     res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
 // Schedule a time slot for the person
-app.post("/schedule", async (req, res) => {
+app.get("/schedule", async (req, res) => {
   const { date, time, beneficiary_id } = req.query;
   if (!beneficiary_id || !date || !time)
     return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
@@ -86,8 +82,6 @@ app.post("/schedule", async (req, res) => {
 
     res.json({ available: true, message: "Time slot successfully scheduled" });
   } catch (err) {
-    console.log(err);
-
     res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
@@ -104,8 +98,6 @@ app.get("/schedule", async (req, res) => {
 
     res.json(schedule);
   } catch (err) {
-    console.log(err);
-
     res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
