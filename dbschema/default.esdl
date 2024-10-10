@@ -5,8 +5,8 @@ module default {
   }
 
   type Schedule {
-    required property date -> cal::local_date;
-    required property time -> cal::local_time;
+    required property date -> str;
+    required property time -> str;
     required link beneficiary -> Beneficiary;
   }
 }

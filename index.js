@@ -36,13 +36,10 @@ app.get("/check_availability", async (req, res) => {
   if (!date || !time)
     return res.status(400).json({ error: "Date and time are required" });
 
-  date = edgedb.local_date(date);
-  time = edgedb.local_time(time);
-
   try {
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>$date AND .time = <cal::local_time>$time
+      FILTER .date = <str>$date AND .time = <str>$time
     `, { date, time });
 
     if (timeSlotTaken.length <= 0)
@@ -61,9 +58,6 @@ app.post("/schedule", async (req, res) => {
   if (!beneficiary_id || !date || !time)
     return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
 
-  date = edgedb.local_date(date);
-  time = edgedb.local_time(time);
-
   try {
     const beneficiary = await client.query(`
       SELECT Beneficiary {
@@ -76,7 +70,7 @@ app.post("/schedule", async (req, res) => {
 
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>$date AND .time = <cal::local_time>$time
+      FILTER .date = <str>$date AND .time = <str>$time
     `, { date, time });
 
     if (timeSlotTaken.length > 0)
@@ -84,8 +78,8 @@ app.post("/schedule", async (req, res) => {
 
     await client.execute(`
       INSERT Schedule {
-        date := <cal::local_date>$date,
-        time := <cal::local_time>$time,
+        date := <str>$date,
+        time := <str>$time,
         beneficiary := <uuid>$beneficiary_id
       }
     `, { date, time, beneficiary_id });
