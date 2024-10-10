@@ -61,15 +61,15 @@ app.get("/check_availability", async (req, res) => {
 
 // Schedule a time slot for the person
 app.post("/schedule", async (req, res) => {
-  const { id, date, time } = req.query;
-  if (!id || !date || !time)
-    return res.status(400).json({ error: "ID, date, and time are required" });
+  const { date, time, beneficiary_id } = req.query;
+  if (!beneficiary_id || !date || !time)
+    return res.status(400).json({ error: "Beneficiary ID, date, and time are required" });
 
   try {
     const beneficiary = await e
       .select(e.Beneficiary, (b) => ({
         id: true,
-        filter: e.op(b.id, '=', id)
+        filter: e.op(b.id, '=', beneficiary_id)
       }))
       .run(client);
 
@@ -90,9 +90,9 @@ app.post("/schedule", async (req, res) => {
       return res.json({ available: false, message: "Time slot unavailable" });
 
     await e.insert(e.Schedule, {
-      id,
       date,
-      time
+      time,
+      beneficiary: e.uuid(beneficiary_id)
     }).run(client);
 
     res.json({ available: true, message: "Time slot successfully scheduled" });
@@ -104,10 +104,13 @@ app.post("/schedule", async (req, res) => {
 app.get("/schedule", async (req, res) => {
   try {
     const schedule = await e
-      .select(e.Schedule, () => ({
-        id: true,
+      .select(e.Schedule, (s) => ({
         date: true,
-        time: true
+        time: true,
+        beneficiary: {
+          id: true,
+          name: true
+        }
       }))
       .run(client);
 
