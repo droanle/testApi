@@ -40,8 +40,8 @@ app.get("/check_availability", async (req, res) => {
   try {
     const timeSlotTaken = await client.query(`
       SELECT Schedule
-      FILTER .date = <cal::local_date>${date} AND .time = <cal::local_time>${time}
-    `);
+      FILTER .date = <cal::local_date>${date} AND .time = <cal::local_time>$time
+    `, { time });
 
     if (timeSlotTaken.length <= 0)
       res.json({ available: false, message: "Time slot unavailable" });
