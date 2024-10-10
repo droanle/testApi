@@ -12,7 +12,7 @@ app.get("/is_beneficiary", async (req, res) => {
   }
 
   try {
-    const beneficiary = await client.querySingle(`
+    const beneficiary = await client.query(`
       SELECT Beneficiary {
         name,
         cpf
@@ -37,7 +37,7 @@ app.get("/check_availability", async (req, res) => {
   }
 
   try {
-    const timeSlotTaken = await client.querySingle(`
+    const timeSlotTaken = await client.query(`
       SELECT Schedule
       FILTER .date = <str>$date AND .time = <str>$time
     `, { date, time });
@@ -60,7 +60,7 @@ app.post("/schedule", async (req, res) => {
   }
 
   try {
-    const beneficiary = await client.querySingle(`
+    const beneficiary = await client.query(`
       SELECT Beneficiary {
         id
       } FILTER .id = <uuid>$beneficiary_id
@@ -70,7 +70,7 @@ app.post("/schedule", async (req, res) => {
       return res.status(404).json({ error: "Beneficiary not found" });
     }
 
-    const timeSlotTaken = await client.querySingle(`
+    const timeSlotTaken = await client.query(`
       SELECT Schedule
       FILTER .date = <str>$date AND .time = <str>$time
     `, { date, time });
