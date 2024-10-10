@@ -80,7 +80,7 @@ app.post("/schedule", async (req, res) => {
       INSERT Schedule {
         date := <str>$date,
         time := <str>$time,
-        beneficiary := <Beneficiary>$beneficiary_id
+        beneficiary := <Beneficiary>$beneficiary
       }
     `, { date, time, beneficiary });
 
